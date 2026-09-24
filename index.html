@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Street Sweeping - 19th St by Dolores Park</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 <style>
 :root{--bg:#0f1115;--card:#181b22;--line:#2a2f3a;--txt:#e8eaf0;--mut:#9aa3b2;--now:#ff5d5d;--today:#ffb547;--soon:#5db8ff;--ok:#4cd98a}
 *{box-sizing:border-box}
@@ -32,6 +34,17 @@ h3{font-size:16px;margin:22px 0 8px;color:var(--mut);font-weight:600;text-transf
 .c-now{background:var(--now);color:#000}.c-today{background:var(--today);color:#000}.c-tom{background:var(--soon);color:#000}
 footer{color:var(--mut);font-size:12px;max-width:960px;margin:0 auto;padding:0 16px 30px}
 a{color:var(--soon)}
+#map{height:460px;border-radius:12px;border:1px solid var(--line);background:#1b1e25}
+@media (max-width:600px){#map{height:360px}}
+.mapwrap{margin:12px 0}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--mut);margin:8px 2px 0}
+.legend i{display:inline-block;width:18px;height:5px;border-radius:3px;margin-right:5px;vertical-align:middle}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--card);color:var(--txt)}
+.leaflet-popup-content{margin:10px 12px;font-size:13px;line-height:1.4}
+.pop b{font-size:14px}.pop .next{margin-top:4px}
+.card .blk{cursor:pointer}.card .blk:hover{text-decoration:underline}
+.nowline{animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{stroke-opacity:.9}50%{stroke-opacity:.25}}
 </style>
 </head>
 <body>
@@ -41,6 +54,9 @@ a{color:var(--soon)}
 </header>
 <main>
 <div class="banner" id="today"></div>
+<div class="mapwrap"><div id="map"></div>
+<div class="legend" id="legend"></div>
+<div class="next" style="margin:4px 2px 0">Each side of the street is its own line, drawn on that side of the curb and colored by sweep day. Red pulsing = being swept now. Tap a line for the schedule; tap a block name below to find it on the map.</div></div>
 <div class="tabs" id="tabs"></div>
 <div id="content"></div>
 </main>
@@ -50,7 +66,7 @@ Source: <a href="https://data.sfgov.org/City-Infrastructure/Street-Sweeping-Sche
 19th St has no Dolores-Church block (the park sits there), so that gap is expected.
 </footer>
 <script>
-const DATA = [{"street":"19th St","blocks":[{"street":"19th St","limits":"Valencia St \u2013 Lapidge St","order":0,"lon":-122.421425212996,"lat":37.760101293834,"sides":{"South":[{"day":"Thu","from":9,"to":11,"weeks":[1,1,1,1,1],"label":"Thursday","holidays":0}],"North":[{"day":"Mon","from":12,"to":14,"weeks":[1,1,1,1,1],"label":"Monday","holidays":0}]}},{"street":"19th St","limits":"Lapidge St \u2013 Linda St","order":1,"lon":-122.422258247683,"lat":37.76005095881,"sides":{"South":[{"day":"Thu","from":9,"to":11,"weeks":[1,1,1,1,1],"label":"Thursday","holidays":0}],"North":[{"day":"Mon","from":12,"to":14,"weeks":[1,1,1,1,1],"label":"Monday","holidays":0}]}},{"street":"19th St","limits":"Linda St \u2013 Guerrero St","order":2,"lon":-122.422879384762,"lat":37.760013423631,"sides":{"North":[{"day":"Mon","from":12,"to":14,"weeks":[1,1,1,1,1],"label":"Monday","holidays":0}],"South":[{"day":"Thu","from":9,"to":11,"weeks":[1,1,1,1,1],"label":"Thursday","holidays":0}]}},{"street":"19th St","limits":"Guerrero St \u2013 Oakwood St","order":3,"lon":-122.42364130739,"lat":37.759967375986,"sides":{"North":[{"day":"Mon","from":12,"to":14,"weeks":[1,1,1,1,1],"label":"Monday","holidays":0}],"South":[{"day":"Thu","from":8,"to":10,"weeks":[1,1,1,1,1],"label":"Thursday","holidays":0}]}},{"street":"19th St","limits":"Oakwood St \u2013 Dolores St","order":4,"lon":-122.424863197384,"lat":37.759893519687,"sides":{"North":[{"day":"Mon","from":12,"to":14,"weeks":[1,1,1,1,1],"label":"Monday","holidays":0}],"South":[{"day":"Thu","from":8,"to":10,"weeks":[1,1,1,1,1],"label":"Thursday","holidays":0}]}},{"street":"19th St","limits":"Church St \u2013 Sanchez St","order":5,"lon":-122.428202322855,"lat":37.759691623297,"sides":{"South":[{"day":"Thu","from":12,"to":14,"weeks":[1,1,1,1,1],"label":"Thursday","holidays":0}],"North":[{"day":"Mon","from":9,"to":11,"weeks":[1,1,1,1,1],"label":"Monday","holidays":0}]}},{"street":"19th St","limits":"Sanchez St \u2013 Noe St","order":6,"lon":-122.430420339731,"lat":37.759557460351,"sides":{"North":[{"day":"Mon","from":9,"to":11,"weeks":[1,1,1,1,1],"label":"Monday","holidays":0}],"South":[{"day":"Thu","from":12,"to":14,"weeks":[1,1,1,1,1],"label":"Thursday","holidays":0}]}},{"street":"19th St","limits":"Noe St \u2013 Hartford St","order":7,"lon":-122.432637769787,"lat":37.759423290826,"sides":{"South":[{"day":"Thu","from":12,"to":14,"weeks":[1,1,1,1,1],"label":"Thursday","holidays":0}],"North":[{"day":"Mon","from":12,"to":14,"weeks":[1,1,1,1,1],"label":"Monday","holidays":0}]}},{"street":"19th St","limits":"Hartford St \u2013 Castro St","order":8,"lon":-122.433744544628,"lat":37.759356307644,"sides":{"South":[{"day":"Thu","from":12,"to":14,"weeks":[1,1,1,1,1],"label":"Thursday","holidays":0}],"North":[{"day":"Mon","from":6,"to":8,"weeks":[1,1,1,1,1],"label":"Monday","holidays":0}]}}]},{"street":"Dolores St","blocks":[{"street":"Dolores St","limits":"18th St \u2013 19th St","order":0,"lon":-122.426076501575,"lat":37.761427133607,"sides":{"East":[{"day":"Mon","from":9,"to":11,"weeks":[1,1,1,1,1],"label":"Monday","holidays":0},{"day":"Mon","from":12,"to":14,"weeks":[1,1,1,1,1],"label":"Monday","holidays":0}],"West":[{"day":"Wed","from":7,"to":8,"weeks":[1,1,1,1,1],"label":"Wednesday","holidays":0}]}},{"street":"Dolores St","limits":"19th St \u2013 Cumberland St","order":1,"lon":-122.425920301996,"lat":37.759829613303,"sides":{"East":[{"day":"Mon","from":9,"to":11,"weeks":[1,1,1,1,1],"label":"Monday","holidays":0},{"day":"Mon","from":12,"to":14,"weeks":[1,1,1,1,1],"label":"Monday","holidays":0}],"West":[{"day":"Wed","from":7,"to":8,"weeks":[1,1,1,1,1],"label":"Wednesday","holidays":0}]}},{"street":"Dolores St","limits":"Cumberland St \u2013 20th St","order":2,"lon":-122.425843422541,"lat":37.759029397574,"sides":{"East":[{"day":"Mon","from":9,"to":11,"weeks":[1,1,1,1,1],"label":"Monday","holidays":0},{"day":"Mon","from":12,"to":14,"weeks":[1,1,1,1,1],"label":"Monday","holidays":0}],"West":[{"day":"Wed","from":7,"to":8,"weeks":[1,1,1,1,1],"label":"Wednesday","holidays":0}]}}]},{"street":"Church St","blocks":[{"street":"Church St","limits":"18th St \u2013 Hancock St","order":0,"lon":-122.428354064554,"lat":37.761289572988,"sides":{"West":[{"day":"Fri","from":9,"to":11,"weeks":[1,1,1,1,1],"label":"Friday","holidays":0}],"East":[{"day":"Wed","from":9,"to":11,"weeks":[1,1,1,1,1],"label":"Wednesday","holidays":0}]}},{"street":"Church St","limits":"Hancock St \u2013 19th St","order":1,"lon":-122.428278231632,"lat":37.760491007386,"sides":{"East":[{"day":"Wed","from":9,"to":11,"weeks":[1,1,1,1,1],"label":"Wednesday","holidays":0}],"West":[{"day":"Fri","from":9,"to":11,"weeks":[1,1,1,1,1],"label":"Friday","holidays":0}]}},{"street":"Church St","limits":"19th St \u2013 Cumberland St","order":2,"lon":-122.428202322855,"lat":37.759691623297,"sides":{"East":[{"day":"Wed","from":9,"to":11,"weeks":[1,1,1,1,1],"label":"Wednesday","holidays":0}],"West":[{"day":"Fri","from":9,"to":11,"weeks":[1,1,1,1,1],"label":"Friday","holidays":0}]}},{"street":"Church St","limits":"Cumberland St \u2013 20th St","order":3,"lon":-122.428126282806,"lat":37.758890496902,"sides":{"East":[{"day":"Wed","from":9,"to":11,"weeks":[1,1,1,1,1],"label":"Wednesday","holidays":0}],"West":[{"day":"Fri","from":9,"to":11,"weeks":[1,1,1,1,1],"label":"Friday","holidays":0}]}}]},{"street":"18th St","blocks":[{"street":"18th St","limits":"Dolores St \u2013 Church St","order":0,"lon":-122.426076501575,"lat":37.761427133607,"sides":{"North":[{"day":"Tues","from":6,"to":8,"weeks":[1,1,1,1,1],"label":"Tuesday","holidays":0},{"day":"Thu","from":6,"to":8,"weeks":[1,1,1,1,1],"label":"Thursday","holidays":0}],"South":[{"day":"Mon","from":6,"to":8,"weeks":[1,1,1,1,1],"label":"Monday","holidays":0}]}}]},{"street":"20th St","blocks":[{"street":"20th St","limits":"Dolores St \u2013 Church St","order":0,"lon":-122.425766807491,"lat":37.75822682901,"sides":{"South":[{"day":"Mon","from":9,"to":11,"weeks":[1,1,1,1,1],"label":"Monday","holidays":0}],"North":[{"day":"Thu","from":9,"to":11,"weeks":[1,1,1,1,1],"label":"Thursday","holidays":0}]}}]}];
+const DATA = [{"street":"19th St","blocks":[{"street":"19th St","limits":"Valencia St \u2013 Lapidge St","order":0,"lon":-122.421425212996,"lat":37.760101293834,"sides":{"South":[{"day":"Thu","from":9,"to":11,"weeks":[1,1,1,1,1],"label":"Thursday","holidays":0}],"North":[{"day":"Mon","from":12,"to":14,"weeks":[1,1,1,1,1],"label":"Monday","holidays":0}]},"sep":false,"geom":{"South":[[-122.421425,37.760101],[-122.422258,37.760051]],"North":[[-122.421425,37.760101],[-122.422258,37.760051]]}},{"street":"19th St","limits":"Lapidge St \u2013 Linda St","order":1,"lon":-122.422258247683,"lat":37.76005095881,"sides":{"South":[{"day":"Thu","from":9,"to":11,"weeks":[1,1,1,1,1],"label":"Thursday","holidays":0}],"North":[{"day":"Mon","from":12,"to":14,"weeks":[1,1,1,1,1],"label":"Monday","holidays":0}]},"sep":false,"geom":{"South":[[-122.422258,37.760051],[-122.422879,37.760013]],"North":[[-122.422258,37.760051],[-122.422879,37.760013]]}},{"street":"19th St","limits":"Linda St \u2013 Guerrero St","order":2,"lon":-122.422879384762,"lat":37.760013423631,"sides":{"North":[{"day":"Mon","from":12,"to":14,"weeks":[1,1,1,1,1],"label":"Monday","holidays":0}],"South":[{"day":"Thu","from":9,"to":11,"weeks":[1,1,1,1,1],"label":"Thursday","holidays":0}]},"sep":false,"geom":{"North":[[-122.422879,37.760013],[-122.423641,37.759967]],"South":[[-122.422879,37.760013],[-122.423641,37.759967]]}},{"street":"19th St","limits":"Guerrero St \u2013 Oakwood St","order":3,"lon":-122.42364130739,"lat":37.759967375986,"sides":{"North":[{"day":"Mon","from":12,"to":14,"weeks":[1,1,1,1,1],"label":"Monday","holidays":0}],"South":[{"day":"Thu","from":8,"to":10,"weeks":[1,1,1,1,1],"label":"Thursday","holidays":0}]},"sep":false,"geom":{"North":[[-122.423641,37.759967],[-122.424863,37.759894]],"South":[[-122.423641,37.759967],[-122.424863,37.759894]]}},{"street":"19th St","limits":"Oakwood St \u2013 Dolores St","order":4,"lon":-122.424863197384,"lat":37.759893519687,"sides":{"North":[{"day":"Mon","from":12,"to":14,"weeks":[1,1,1,1,1],"label":"Monday","holidays":0}],"South":[{"day":"Thu","from":8,"to":10,"weeks":[1,1,1,1,1],"label":"Thursday","holidays":0}]},"sep":false,"geom":{"North":[[-122.424863,37.759894],[-122.42592,37.75983]],"South":[[-122.424863,37.759894],[-122.42592,37.75983]]}},{"street":"19th St","limits":"Church St \u2013 Sanchez St","order":5,"lon":-122.428202322855,"lat":37.759691623297,"sides":{"South":[{"day":"Thu","from":12,"to":14,"weeks":[1,1,1,1,1],"label":"Thursday","holidays":0}],"North":[{"day":"Mon","from":9,"to":11,"weeks":[1,1,1,1,1],"label":"Monday","holidays":0}]},"sep":false,"geom":{"South":[[-122.428202,37.759692],[-122.43042,37.759557]],"North":[[-122.428202,37.759692],[-122.43042,37.759557]]}},{"street":"19th St","limits":"Sanchez St \u2013 Noe St","order":6,"lon":-122.430420339731,"lat":37.759557460351,"sides":{"North":[{"day":"Mon","from":9,"to":11,"weeks":[1,1,1,1,1],"label":"Monday","holidays":0}],"South":[{"day":"Thu","from":12,"to":14,"weeks":[1,1,1,1,1],"label":"Thursday","holidays":0}]},"sep":false,"geom":{"North":[[-122.43042,37.759557],[-122.432638,37.759423]],"South":[[-122.43042,37.759557],[-122.432638,37.759423]]}},{"street":"19th St","limits":"Noe St \u2013 Hartford St","order":7,"lon":-122.432637769787,"lat":37.759423290826,"sides":{"South":[{"day":"Thu","from":12,"to":14,"weeks":[1,1,1,1,1],"label":"Thursday","holidays":0}],"North":[{"day":"Mon","from":12,"to":14,"weeks":[1,1,1,1,1],"label":"Monday","holidays":0}]},"sep":false,"geom":{"South":[[-122.432638,37.759423],[-122.433745,37.759356]],"North":[[-122.432638,37.759423],[-122.433745,37.759356]]}},{"street":"19th St","limits":"Hartford St \u2013 Castro St","order":8,"lon":-122.433744544628,"lat":37.759356307644,"sides":{"South":[{"day":"Thu","from":12,"to":14,"weeks":[1,1,1,1,1],"label":"Thursday","holidays":0}],"North":[{"day":"Mon","from":6,"to":8,"weeks":[1,1,1,1,1],"label":"Monday","holidays":0}]},"sep":false,"geom":{"South":[[-122.433745,37.759356],[-122.434854,37.759289]],"North":[[-122.433745,37.759356],[-122.434854,37.759289]]}}]},{"street":"Dolores St","blocks":[{"street":"Dolores St","limits":"18th St \u2013 19th St","order":0,"lon":-122.426076501575,"lat":37.761427133607,"sides":{"East":[{"day":"Mon","from":9,"to":11,"weeks":[1,1,1,1,1],"label":"Monday","holidays":0},{"day":"Mon","from":12,"to":14,"weeks":[1,1,1,1,1],"label":"Monday","holidays":0}],"West":[{"day":"Wed","from":7,"to":8,"weeks":[1,1,1,1,1],"label":"Wednesday","holidays":0}]},"sep":false,"geom":{"East":[[-122.426077,37.761427],[-122.426151,37.761305],[-122.426017,37.759939],[-122.42592,37.75983]],"West":[[-122.426077,37.761427],[-122.426151,37.761305],[-122.426017,37.759939],[-122.42592,37.75983]]}},{"street":"Dolores St","limits":"19th St \u2013 Cumberland St","order":1,"lon":-122.425920301996,"lat":37.759829613303,"sides":{"East":[{"day":"Mon","from":9,"to":11,"weeks":[1,1,1,1,1],"label":"Monday","holidays":0},{"day":"Mon","from":12,"to":14,"weeks":[1,1,1,1,1],"label":"Monday","holidays":0}],"West":[{"day":"Wed","from":7,"to":8,"weeks":[1,1,1,1,1],"label":"Wednesday","holidays":0}]},"sep":true,"geom":{"East":[[-122.42592,37.75983],[-122.425822,37.75971],[-122.425769,37.759154],[-122.425843,37.759029]],"West":[[-122.42592,37.75983],[-122.425994,37.7597],[-122.425941,37.759144],[-122.425843,37.759029]]}},{"street":"Dolores St","limits":"Cumberland St \u2013 20th St","order":2,"lon":-122.425843422541,"lat":37.759029397574,"sides":{"East":[{"day":"Mon","from":9,"to":11,"weeks":[1,1,1,1,1],"label":"Monday","holidays":0},{"day":"Mon","from":12,"to":14,"weeks":[1,1,1,1,1],"label":"Monday","holidays":0}],"West":[{"day":"Wed","from":7,"to":8,"weeks":[1,1,1,1,1],"label":"Wednesday","holidays":0}]},"sep":true,"geom":{"East":[[-122.425843,37.759029],[-122.425746,37.758912],[-122.425692,37.758349],[-122.425767,37.758227]],"West":[[-122.425843,37.759029],[-122.425918,37.758902],[-122.425864,37.758338],[-122.425767,37.758227]]}}]},{"street":"Church St","blocks":[{"street":"Church St","limits":"18th St \u2013 Hancock St","order":0,"lon":-122.428354064554,"lat":37.761289572988,"sides":{"West":[{"day":"Fri","from":9,"to":11,"weeks":[1,1,1,1,1],"label":"Friday","holidays":0}],"East":[{"day":"Wed","from":9,"to":11,"weeks":[1,1,1,1,1],"label":"Wednesday","holidays":0}]},"sep":false,"geom":{"West":[[-122.428354,37.76129],[-122.428278,37.760491]],"East":[[-122.428354,37.76129],[-122.428278,37.760491]]}},{"street":"Church St","limits":"Hancock St \u2013 19th St","order":1,"lon":-122.428278231632,"lat":37.760491007386,"sides":{"East":[{"day":"Wed","from":9,"to":11,"weeks":[1,1,1,1,1],"label":"Wednesday","holidays":0}],"West":[{"day":"Fri","from":9,"to":11,"weeks":[1,1,1,1,1],"label":"Friday","holidays":0}]},"sep":false,"geom":{"East":[[-122.428278,37.760491],[-122.428202,37.759692]],"West":[[-122.428278,37.760491],[-122.428202,37.759692]]}},{"street":"Church St","limits":"19th St \u2013 Cumberland St","order":2,"lon":-122.428202322855,"lat":37.759691623297,"sides":{"East":[{"day":"Wed","from":9,"to":11,"weeks":[1,1,1,1,1],"label":"Wednesday","holidays":0}],"West":[{"day":"Fri","from":9,"to":11,"weeks":[1,1,1,1,1],"label":"Friday","holidays":0}]},"sep":false,"geom":{"East":[[-122.428202,37.759692],[-122.428126,37.75889]],"West":[[-122.428202,37.759692],[-122.428126,37.75889]]}},{"street":"Church St","limits":"Cumberland St \u2013 20th St","order":3,"lon":-122.428126282806,"lat":37.758890496902,"sides":{"East":[{"day":"Wed","from":9,"to":11,"weeks":[1,1,1,1,1],"label":"Wednesday","holidays":0}],"West":[{"day":"Fri","from":9,"to":11,"weeks":[1,1,1,1,1],"label":"Friday","holidays":0}]},"sep":false,"geom":{"East":[[-122.428126,37.75889],[-122.42805,37.758089]],"West":[[-122.428126,37.75889],[-122.42805,37.758089]]}}]},{"street":"18th St","blocks":[{"street":"18th St","limits":"Dolores St \u2013 Church St","order":0,"lon":-122.426076501575,"lat":37.761427133607,"sides":{"North":[{"day":"Tues","from":6,"to":8,"weeks":[1,1,1,1,1],"label":"Tuesday","holidays":0},{"day":"Thu","from":6,"to":8,"weeks":[1,1,1,1,1],"label":"Thursday","holidays":0}],"South":[{"day":"Mon","from":6,"to":8,"weeks":[1,1,1,1,1],"label":"Monday","holidays":0}]},"sep":false,"geom":{"North":[[-122.426077,37.761427],[-122.428354,37.76129]],"South":[[-122.426077,37.761427],[-122.428354,37.76129]]}}]},{"street":"20th St","blocks":[{"street":"20th St","limits":"Dolores St \u2013 Church St","order":0,"lon":-122.425766807491,"lat":37.75822682901,"sides":{"South":[{"day":"Mon","from":9,"to":11,"weeks":[1,1,1,1,1],"label":"Monday","holidays":0}],"North":[{"day":"Thu","from":9,"to":11,"weeks":[1,1,1,1,1],"label":"Thursday","holidays":0}]},"sep":false,"geom":{"South":[[-122.425767,37.758227],[-122.42805,37.758089]],"North":[[-122.425767,37.758227],[-122.42805,37.758089]]}}]}];
 const PARK = {"Dolores St": "West", "Church St": "East", "18th St": "South", "20th St": "North"};
 const DAYS=['Sun','Mon','Tues','Wed','Thu','Fri','Sat'];
 const DNAME={Sun:'Sun',Mon:'Mon',Tues:'Tue',Wed:'Wed',Thu:'Thu',Fri:'Fri',Sat:'Sat'};
@@ -115,7 +131,7 @@ function render(){
   for(const g of groups){
     h+='<h3>'+g.street+(g.street==='19th St'?' (Valencia to Castro)':'')+'</h3><div class="grid">';
     for(const b of g.blocks){
-      h+='<div class="card"><div class="blk">'+g.street+': '+b.limits+'</div>';
+      h+='<div class="card"><div class="blk" data-k="'+g.street+'|'+b.limits+'" title="Show on map">'+g.street+': '+b.limits+' <span style="color:var(--mut);font-weight:400;font-size:12px">&#8599; map</span></div>';
       const sides=Object.entries(b.sides).sort((a,c)=>ORDER[a[0]]-ORDER[c[0]]);
       for(const [side,sched] of sides){
         const n=nextFor(sched,now);
@@ -128,7 +144,73 @@ function render(){
     h+='</div>';
   }
   document.getElementById('content').innerHTML=h;
+  document.querySelectorAll('.card .blk').forEach(el=>el.onclick=()=>focusBlock(el.dataset.k));
+  updateMap(now);
 }
+
+// ---- map layer ----
+const DAYCOL={Mon:'#5db8ff',Tue:'#b58cff',Tues:'#b58cff',Wed:'#4cd98a',Thu:'#ffb547',Fri:'#ff7ac6',Sat:'#c9d1dc',Sun:'#c9d1dc'};
+function offM(){ // offset from centerline: ~6px on screen, at least 8m
+  const z=map?map.getZoom():16; return Math.max(8,6*156543.03*Math.cos(37.76*Math.PI/180)/Math.pow(2,z));
+}
+function offsetLine(coords,side){
+  const OFF=offM();
+  const lat0=coords[0][1]*Math.PI/180, mx=111320*Math.cos(lat0), my=110540;
+  const want={North:[0,1],South:[0,-1],East:[1,0],West:[-1,0]}[side];
+  const pts=coords.map(([x,y])=>[x*mx,y*my]);
+  // one normal for the whole block (streets are near-straight)
+  const dx=pts[pts.length-1][0]-pts[0][0], dy=pts[pts.length-1][1]-pts[0][1], L=Math.hypot(dx,dy)||1;
+  let nx=-dy/L, ny=dx/L; if(nx*want[0]+ny*want[1]<0){nx=-nx;ny=-ny}
+  return pts.map(([x,y])=>[(y+ny*OFF)/my,(x+nx*OFF)/mx]);
+}
+let map=null; const LAYERS=[]; const BLOCKLAYER={};
+function initMap(){
+  if(typeof L==='undefined'){document.getElementById('map').innerHTML='<div style="padding:16px;color:var(--mut)">Map could not load (no connection to the map library). The lists below still work.</div>';return}
+  map=L.map('map',{scrollWheelZoom:false,tap:true}).setView([37.7598,-122.4265],16);
+  const ESRI='https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/';
+  L.tileLayer(ESRI+'World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,maxNativeZoom:16,attribution:'Tiles &copy; Esri, HERE, Garmin, &copy; OpenStreetMap contributors'}).addTo(map);
+  L.tileLayer(ESRI+'World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,maxNativeZoom:16,pane:'shadowPane'}).addTo(map);
+  const all=[];
+  for(const g of DATA) for(const b of g.blocks){
+    const bl=[];
+    for(const [side,sched] of Object.entries(b.sides)){
+      const raw=b.geom[side]; if(!raw) continue;
+      const ll=b.sep? raw.map(([x,y])=>[y,x]) : offsetLine(raw,side);
+      const glow=L.polyline(ll,{color:'#ff5d5d',weight:13,opacity:0,interactive:false}).addTo(map);
+      const line=L.polyline(ll,{color:DAYCOL[sched[0].day],weight:5,opacity:.95,lineCap:'butt'}).addTo(map);
+      const hit=L.polyline(ll,{color:'#000',weight:18,opacity:0}).addTo(map); // bigger tap target
+      const o={g,b,side,sched,glow,line,hit,raw}; LAYERS.push(o);
+      [line,hit].forEach(x=>x.on('click',e=>{L.popup().setLatLng(e.latlng).setContent(popHtml(o)).openOn(map)}));
+      bl.push(line); all.push(...ll);
+    }
+    BLOCKLAYER[g.street+'|'+b.limits]=bl;
+  }
+  if(all.length) map.fitBounds(L.latLngBounds(all),{padding:[12,12]});
+  map.on('zoomend',()=>{for(const o of LAYERS){ if(o.b.sep) continue; const ll=offsetLine(o.raw,o.side); o.glow.setLatLngs(ll);o.line.setLatLngs(ll);o.hit.setLatLngs(ll);}});
+  map.fire('zoomend');
+  const days=[...new Set(LAYERS.map(o=>o.sched[0].day))].sort((a,c)=>DAYS.indexOf(a)-DAYS.indexOf(c));
+  document.getElementById('legend').innerHTML=days.map(d=>'<span><i style="background:'+DAYCOL[d]+'"></i>'+DNAME[d]+'</span>').join('')+'<span><i style="background:#ff5d5d"></i>Sweeping now</span>';
+}
+function popHtml(o){
+  const now=pacificNow(); const n=nextFor(o.sched,now);
+  const tag=n&&n.status==='now'?' <span class="chip c-now">NOW</span>':n&&n.status==='today'?' <span class="chip c-today">TODAY</span>':n&&n.status==='tom'?' <span class="chip c-tom">TOMORROW</span>':'';
+  const park=PARK[o.g.street]===o.side?' (park side)':'';
+  return '<div class="pop"><b>'+o.g.street+'</b>, '+o.b.limits+'<br><b>'+o.side+' side</b>'+park+tag+'<br>'+schedText(o.sched)+'<div class="next">Next: '+(n?fmtDate(n.dt)+', '+range(n.s.from,n.s.to):'-')+'</div></div>';
+}
+function updateMap(now){
+  if(!map) return;
+  for(const o of LAYERS){
+    const n=nextFor(o.sched,now); const isNow=n&&n.status==='now';
+    o.glow.setStyle({opacity:isNow?.9:0}); o.line.setStyle({weight:isNow?7:5});
+    const p=o.glow.getElement&&o.glow.getElement(); if(p) p.classList.toggle('nowline',!!isNow);
+  }
+}
+function focusBlock(key){
+  const bl=BLOCKLAYER[key]; if(!map||!bl||!bl.length) return;
+  map.fitBounds(L.featureGroup(bl).getBounds(),{maxZoom:18,padding:[40,40]});
+  document.getElementById('map').scrollIntoView({behavior:'smooth',block:'center'});
+}
+initMap();
 render();
 setInterval(render,60000);
 </script>
