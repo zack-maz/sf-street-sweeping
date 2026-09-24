@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Street Sweeping - 19th St by Dolores Park</title>
+<style>
+:root{--bg:#0f1115;--card:#181b22;--line:#2a2f3a;--txt:#e8eaf0;--mut:#9aa3b2;--now:#ff5d5d;--today:#ffb547;--soon:#5db8ff;--ok:#4cd98a}
+*{box-sizing:border-box}
+body{margin:0;font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--txt)}
+header{padding:20px 16px 8px;max-width:960px;margin:0 auto}
+h1{font-size:22px;margin:0 0 4px}
+.sub{color:var(--mut);font-size:13px}
+main{max-width:960px;margin:0 auto;padding:0 16px 40px}
+.banner{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin:12px 0}
+.banner h2{font-size:15px;margin:0 0 8px}
+.banner ul{margin:0;padding-left:18px}
+.tabs{display:flex;gap:8px;margin:16px 0 8px;flex-wrap:wrap}
+.tabs button{background:var(--card);color:var(--txt);border:1px solid var(--line);border-radius:999px;padding:7px 14px;font-size:14px;cursor:pointer}
+.tabs button.on{background:var(--txt);color:var(--bg)}
+h3{font-size:16px;margin:22px 0 8px;color:var(--mut);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
+.card .blk{font-weight:600;margin-bottom:8px}
+.side{display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-top:1px solid var(--line)}
+.side:first-of-type{border-top:0}
+.sname{font-weight:600;min-width:70px}
+.park{font-size:11px;color:var(--ok);display:block;font-weight:500}
+.sched{flex:1}
+.next{color:var(--mut);font-size:13px}
+.chip{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap;align-self:flex-start}
+.c-now{background:var(--now);color:#000}.c-today{background:var(--today);color:#000}.c-tom{background:var(--soon);color:#000}
+footer{color:var(--mut);font-size:12px;max-width:960px;margin:0 auto;padding:0 16px 30px}
+a{color:var(--soon)}
+</style>
+</head>
+<body>
+<header>
+<h1>Street sweeping - 19th St by Dolores Park</h1>
+<div class="sub">San Francisco - both sides of every block. <span id="clock"></span></div>
+</header>
+<main>
+<div class="banner" id="today"></div>
+<div class="tabs" id="tabs"></div>
+<div id="content"></div>
+</main>
+<footer>
+Source: <a href="https://data.sfgov.org/City-Infrastructure/Street-Sweeping-Schedule/yhqp-riqs">DataSF Street Sweeping Schedule (yhqp-riqs)</a>, snapshot pulled Sep 24, 2026 (dataset last updated May 14, 2026). 
+"1st, 3rd, 5th" means that occurrence of the weekday in the month. Daytime sweeping is not enforced on some city holidays - see the <a href="https://www.sfmta.com/getting-around/drive-park/holiday-enforcement-schedule">SFMTA holiday schedule</a>. Posted signs always win - check the sign before you park.
+19th St has no Dolores-Church block (the park sits there), so that gap is expected.
+</footer>
+<script>
+const DATA = [{"street":"19th St","blocks":[{"street":"19th St","limits":"Valencia St \u2013 Lapidge St","order":0,"lon":-122.421425212996,"lat":37.760101293834,"sides":{"South":[{"day":"Thu","from":9,"to":11,"weeks":[1,1,1,1,1],"label":"Thursday","holidays":0}],"North":[{"day":"Mon","from":12,"to":14,"weeks":[1,1,1,1,1],"label":"Monday","holidays":0}]}},{"street":"19th St","limits":"Lapidge St \u2013 Linda St","order":1,"lon":-122.422258247683,"lat":37.76005095881,"sides":{"South":[{"day":"Thu","from":9,"to":11,"weeks":[1,1,1,1,1],"label":"Thursday","holidays":0}],"North":[{"day":"Mon","from":12,"to":14,"weeks":[1,1,1,1,1],"label":"Monday","holidays":0}]}},{"street":"19th St","limits":"Linda St \u2013 Guerrero St","order":2,"lon":-122.422879384762,"lat":37.760013423631,"sides":{"North":[{"day":"Mon","from":12,"to":14,"weeks":[1,1,1,1,1],"label":"Monday","holidays":0}],"South":[{"day":"Thu","from":9,"to":11,"weeks":[1,1,1,1,1],"label":"Thursday","holidays":0}]}},{"street":"19th St","limits":"Guerrero St \u2013 Oakwood St","order":3,"lon":-122.42364130739,"lat":37.759967375986,"sides":{"North":[{"day":"Mon","from":12,"to":14,"weeks":[1,1,1,1,1],"label":"Monday","holidays":0}],"South":[{"day":"Thu","from":8,"to":10,"weeks":[1,1,1,1,1],"label":"Thursday","holidays":0}]}},{"street":"19th St","limits":"Oakwood St \u2013 Dolores St","order":4,"lon":-122.424863197384,"lat":37.759893519687,"sides":{"North":[{"day":"Mon","from":12,"to":14,"weeks":[1,1,1,1,1],"label":"Monday","holidays":0}],"South":[{"day":"Thu","from":8,"to":10,"weeks":[1,1,1,1,1],"label":"Thursday","holidays":0}]}},{"street":"19th St","limits":"Church St \u2013 Sanchez St","order":5,"lon":-122.428202322855,"lat":37.759691623297,"sides":{"South":[{"day":"Thu","from":12,"to":14,"weeks":[1,1,1,1,1],"label":"Thursday","holidays":0}],"North":[{"day":"Mon","from":9,"to":11,"weeks":[1,1,1,1,1],"label":"Monday","holidays":0}]}},{"street":"19th St","limits":"Sanchez St \u2013 Noe St","order":6,"lon":-122.430420339731,"lat":37.759557460351,"sides":{"North":[{"day":"Mon","from":9,"to":11,"weeks":[1,1,1,1,1],"label":"Monday","holidays":0}],"South":[{"day":"Thu","from":12,"to":14,"weeks":[1,1,1,1,1],"label":"Thursday","holidays":0}]}},{"street":"19th St","limits":"Noe St \u2013 Hartford St","order":7,"lon":-122.432637769787,"lat":37.759423290826,"sides":{"South":[{"day":"Thu","from":12,"to":14,"weeks":[1,1,1,1,1],"label":"Thursday","holidays":0}],"North":[{"day":"Mon","from":12,"to":14,"weeks":[1,1,1,1,1],"label":"Monday","holidays":0}]}},{"street":"19th St","limits":"Hartford St \u2013 Castro St","order":8,"lon":-122.433744544628,"lat":37.759356307644,"sides":{"South":[{"day":"Thu","from":12,"to":14,"weeks":[1,1,1,1,1],"label":"Thursday","holidays":0}],"North":[{"day":"Mon","from":6,"to":8,"weeks":[1,1,1,1,1],"label":"Monday","holidays":0}]}}]},{"street":"Dolores St","blocks":[{"street":"Dolores St","limits":"18th St \u2013 19th St","order":0,"lon":-122.426076501575,"lat":37.761427133607,"sides":{"East":[{"day":"Mon","from":9,"to":11,"weeks":[1,1,1,1,1],"label":"Monday","holidays":0},{"day":"Mon","from":12,"to":14,"weeks":[1,1,1,1,1],"label":"Monday","holidays":0}],"West":[{"day":"Wed","from":7,"to":8,"weeks":[1,1,1,1,1],"label":"Wednesday","holidays":0}]}},{"street":"Dolores St","limits":"19th St \u2013 Cumberland St","order":1,"lon":-122.425920301996,"lat":37.759829613303,"sides":{"East":[{"day":"Mon","from":9,"to":11,"weeks":[1,1,1,1,1],"label":"Monday","holidays":0},{"day":"Mon","from":12,"to":14,"weeks":[1,1,1,1,1],"label":"Monday","holidays":0}],"West":[{"day":"Wed","from":7,"to":8,"weeks":[1,1,1,1,1],"label":"Wednesday","holidays":0}]}},{"street":"Dolores St","limits":"Cumberland St \u2013 20th St","order":2,"lon":-122.425843422541,"lat":37.759029397574,"sides":{"East":[{"day":"Mon","from":9,"to":11,"weeks":[1,1,1,1,1],"label":"Monday","holidays":0},{"day":"Mon","from":12,"to":14,"weeks":[1,1,1,1,1],"label":"Monday","holidays":0}],"West":[{"day":"Wed","from":7,"to":8,"weeks":[1,1,1,1,1],"label":"Wednesday","holidays":0}]}}]},{"street":"Church St","blocks":[{"street":"Church St","limits":"18th St \u2013 Hancock St","order":0,"lon":-122.428354064554,"lat":37.761289572988,"sides":{"West":[{"day":"Fri","from":9,"to":11,"weeks":[1,1,1,1,1],"label":"Friday","holidays":0}],"East":[{"day":"Wed","from":9,"to":11,"weeks":[1,1,1,1,1],"label":"Wednesday","holidays":0}]}},{"street":"Church St","limits":"Hancock St \u2013 19th St","order":1,"lon":-122.428278231632,"lat":37.760491007386,"sides":{"East":[{"day":"Wed","from":9,"to":11,"weeks":[1,1,1,1,1],"label":"Wednesday","holidays":0}],"West":[{"day":"Fri","from":9,"to":11,"weeks":[1,1,1,1,1],"label":"Friday","holidays":0}]}},{"street":"Church St","limits":"19th St \u2013 Cumberland St","order":2,"lon":-122.428202322855,"lat":37.759691623297,"sides":{"East":[{"day":"Wed","from":9,"to":11,"weeks":[1,1,1,1,1],"label":"Wednesday","holidays":0}],"West":[{"day":"Fri","from":9,"to":11,"weeks":[1,1,1,1,1],"label":"Friday","holidays":0}]}},{"street":"Church St","limits":"Cumberland St \u2013 20th St","order":3,"lon":-122.428126282806,"lat":37.758890496902,"sides":{"East":[{"day":"Wed","from":9,"to":11,"weeks":[1,1,1,1,1],"label":"Wednesday","holidays":0}],"West":[{"day":"Fri","from":9,"to":11,"weeks":[1,1,1,1,1],"label":"Friday","holidays":0}]}}]},{"street":"18th St","blocks":[{"street":"18th St","limits":"Dolores St \u2013 Church St","order":0,"lon":-122.426076501575,"lat":37.761427133607,"sides":{"North":[{"day":"Tues","from":6,"to":8,"weeks":[1,1,1,1,1],"label":"Tuesday","holidays":0},{"day":"Thu","from":6,"to":8,"weeks":[1,1,1,1,1],"label":"Thursday","holidays":0}],"South":[{"day":"Mon","from":6,"to":8,"weeks":[1,1,1,1,1],"label":"Monday","holidays":0}]}}]},{"street":"20th St","blocks":[{"street":"20th St","limits":"Dolores St \u2013 Church St","order":0,"lon":-122.425766807491,"lat":37.75822682901,"sides":{"South":[{"day":"Mon","from":9,"to":11,"weeks":[1,1,1,1,1],"label":"Monday","holidays":0}],"North":[{"day":"Thu","from":9,"to":11,"weeks":[1,1,1,1,1],"label":"Thursday","holidays":0}]}}]}];
+const PARK = {"Dolores St": "West", "Church St": "East", "18th St": "South", "20th St": "North"};
+const DAYS=['Sun','Mon','Tues','Wed','Thu','Fri','Sat'];
+const DNAME={Sun:'Sun',Mon:'Mon',Tues:'Tue',Wed:'Wed',Thu:'Thu',Fri:'Fri',Sat:'Sat'};
+function pacificNow(){
+  const p=new Intl.DateTimeFormat('en-US',{timeZone:'America/Los_Angeles',year:'numeric',month:'numeric',day:'numeric',hour:'numeric',minute:'numeric',hour12:false}).formatToParts(new Date());
+  const g=t=>+p.find(x=>x.type===t).value;
+  return {y:g('year'),m:g('month'),d:g('day'),h:g('hour')%24,min:g('minute')};
+}
+function hr(h){const s=h>=12?'pm':'am';const x=h%12||12;return x+s}
+function range(a,b){const sa=a>=12?'pm':'am',sb=b>=12?'pm':'am';return (sa===sb?(a%12||12):hr(a))+'-'+hr(b)}
+function occurs(dt,s){ // dt = UTC-midnight Date representing a Pacific calendar day
+  if(DAYS[dt.getUTCDay()]!==s.day) return false;
+  const n=Math.floor((dt.getUTCDate()-1)/7);
+  return s.weeks[n]===1;
+}
+function nextFor(sched,now){
+  // returns {date,s,status} for soonest upcoming window across schedules
+  let best=null;
+  for(let i=0;i<40 && !best;i++){
+    const dt=new Date(Date.UTC(now.y,now.m-1,now.d+i));
+    const hits=sched.filter(s=>occurs(dt,s)).sort((a,b)=>a.from-b.from);
+    for(const s of hits){
+      const cur=now.h+now.min/60;
+      if(i===0 && cur>=s.to) continue;
+      let status= i===0 ? (cur>=s.from?'now':'today') : (i===1?'tom':'');
+      best={dt,s,i,status};break;
+    }
+  }
+  return best;
+}
+function fmtDate(dt){return dt.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',timeZone:'UTC'})}
+function schedText(sched){return sched.map(s=>{
+  const all=s.weeks.every(w=>w===1);
+  const lab= all? ('Every '+DNAME[s.day]) : s.label.replace(/^\w+/,DNAME[s.day]);
+  return lab+' '+range(s.from,s.to);}).join('<br>')}
+const ORDER={North:0,South:1,East:0,West:1};
+let active='19th St';
+function render(){
+  const now=pacificNow();
+  const today=new Date(Date.UTC(now.y,now.m-1,now.d));
+  document.getElementById('clock').textContent='Now: '+fmtDate(today)+', '+hr(now.h).replace(/(am|pm)/,':'+String(now.min).padStart(2,'0')+'$1')+' Pacific';
+  // today banner
+  const rows=[];
+  for(const g of DATA) for(const b of g.blocks) for(const [side,sched] of Object.entries(b.sides)){
+    const n=nextFor(sched,now);
+    if(n && n.i===0) rows.push({g:g.street,b,side,n});
+  }
+  rows.sort((a,b)=>a.n.s.from-b.n.s.from);
+  const t=document.getElementById('today');
+  if(!rows.length){
+    // find soonest overall on 19th St
+    t.innerHTML='<h2>No more sweeping today on these blocks</h2><div class="next">Check the cards below for the next date on your side.</div>';
+  } else {
+    t.innerHTML='<h2>Still to come today ('+fmtDate(today)+')</h2><ul>'+rows.map(r=>'<li>'+(r.n.status==='now'?'<b style="color:var(--now)">NOW</b> ':'')+'<b>'+r.g+'</b>, '+r.b.limits+' - '+r.side+' side, '+range(r.n.s.from,r.n.s.to)+'</li>').join('')+'</ul>';
+  }
+  // tabs
+  const tabs=[['19th St','19th St'],['park','Dolores Park edges']];
+  document.getElementById('tabs').innerHTML=tabs.map(([k,l])=>'<button class="'+(active===k?'on':'')+'" data-k="'+k+'">'+l+'</button>').join('');
+  document.querySelectorAll('#tabs button').forEach(bt=>bt.onclick=()=>{active=bt.dataset.k;render()});
+  const groups= active==='19th St'? DATA.filter(g=>g.street==='19th St') : DATA.filter(g=>g.street!=='19th St');
+  let h='';
+  for(const g of groups){
+    h+='<h3>'+g.street+(g.street==='19th St'?' (Valencia to Castro)':'')+'</h3><div class="grid">';
+    for(const b of g.blocks){
+      h+='<div class="card"><div class="blk">'+g.street+': '+b.limits+'</div>';
+      const sides=Object.entries(b.sides).sort((a,c)=>ORDER[a[0]]-ORDER[c[0]]);
+      for(const [side,sched] of sides){
+        const n=nextFor(sched,now);
+        const chip=n&&n.status==='now'?'<span class="chip c-now">NOW</span>':n&&n.status==='today'?'<span class="chip c-today">TODAY</span>':n&&n.status==='tom'?'<span class="chip c-tom">TOMORROW</span>':'';
+        const isPark=PARK[g.street]===side;
+        h+='<div class="side"><div class="sname">'+side+(isPark?'<span class="park">park side</span>':'')+'</div><div class="sched">'+schedText(sched)+'<div class="next">Next: '+(n?fmtDate(n.dt)+', '+range(n.s.from,n.s.to):'-')+'</div></div>'+chip+'</div>';
+      }
+      h+='</div>';
+    }
+    h+='</div>';
+  }
+  document.getElementById('content').innerHTML=h;
+}
+render();
+setInterval(render,60000);
+</script>
+</body>
+</html>
